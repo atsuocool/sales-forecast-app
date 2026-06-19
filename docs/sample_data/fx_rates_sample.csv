@@ -1,0 +1,16 @@
+rate_type,period,jpy_per_usd,updated_by,updated_at
+historical,2023-01,130.5,system,2026-06-19
+historical,2023-04,133.1,system,2026-06-19
+historical,2023-07,141.8,system,2026-06-19
+historical,2023-10,149.2,system,2026-06-19
+historical,2024-01,148.0,system,2026-06-19
+historical,2024-04,151.9,system,2026-06-19
+historical,2024-07,153.2,system,2026-06-19
+historical,2024-10,150.1,system,2026-06-19
+historical,2025-01,155.0,system,2026-06-19
+historical,2025-04,148.3,system,2026-06-19
+historical,2025-07,145.0,system,2026-06-19
+historical,2025-10,149.7,system,2026-06-19
+historical,2026-01,152.4,system,2026-06-19
+historical,2026-04,143.8,system,2026-06-19
+forecast_assumption,2026-06,148.0,system,2026-06-19

@@ -10,6 +10,7 @@ from src.pipeline.iqvia_loader import load_iqvia
 from src.pipeline.inventory_loader import (
     load_sellin, load_sellout, load_inventory, load_regulatory_events
 )
+from src.pipeline.fx_loader import load_fx_rates
 
 DATA_DIR = "docs/sample_data"
 DB_PATH  = "data/pharma_forecast.db"
@@ -48,6 +49,10 @@ def main():
     print("制度イベントマスタをロード中...")
     n = load_regulatory_events(conn, f"{DATA_DIR}/regulatory_events_sample.csv")
     print(f"  regulatory_events 行数: {n}")
+
+    print("為替レートをロード中...")
+    n = load_fx_rates(conn, f"{DATA_DIR}/fx_rates_sample.csv")
+    print(f"  fx_rates 行数: {n}")
 
     conn.close()
     print("\n完了。")
