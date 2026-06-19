@@ -160,29 +160,11 @@ tests/
 | **Step 2** | Holt-Winters 市場予測エンジン（バックテスト付き） | ✅ 完了・コミット済み |
 | **Step 3** | ロジスティック浸透率モデル + 制度イベント調整 + PNG プロット | ✅ 完了・コミット済み |
 | **Step 4** | 自社シェア・SKU 構成比トレンド + 統合 SKU 予測 | ✅ 完了・コミット済み |
-| **Step 5** | シナリオ軸実装（制度変更加味/非加味 × ベース/楽観/悲観） | 🔶 **実装中** |
-| Step 6 | 通貨換算（JPY/USD 表示切替、fx_rates テーブル） | 未着手 |
-| Step 7 | フロントエンド（仕様: React+Tailwind、検討: Streamlit も候補） | 未着手 |
-| Step 8 | エクスポート（Excel/PowerPoint/トーク原稿 Word） | 未着手 |
+| **Step 5** | シナリオ軸実装（制度変更加味/非加味 × ベース/楽観/悲観） | ✅ 完了・コミット済み |
+| **Step 6** | 通貨換算（JPY/USD 表示切替、fx_rates テーブル） | ✅ 完了・コミット済み |
+| **Step 7** | Streamlit フロントエンド（ダッシュボード/シナリオ比較/データ管理） | ✅ 完了・コミット済み |
+| **Step 8** | エクスポート（Excel/PowerPoint/Word トーク原稿） | ✅ 完了・コミット済み |
 | Step 9 | 複数 SKU・製品への展開・運用化 | 未着手 |
-
-### Step 5 の現在の作業状態（未コミット）
-
-**直前のユーザー指示**:
-- `regulatory_events` テーブルに `impact_target`, `impact_parameter`, `impact_value`, `effect_lag_months` 列を追加（スキーマ拡張）
-- `impact_target=penetration` の行で浸透率パラメータ（L/k）を **漸増**（ステップ関数ではなく `effect_lag_months` ヶ月かけて緩やかに）調整するロジックの実装
-- フィルグラスチム(ING03)の `regulatory_adjusted` vs `regulatory_excluded` 浸透率カーブ比較プロット（2026-06 以降に乖離が生じることを確認）
-- 浸透率イベント効果量（+0.05, +0.02）を **軸2（楽観/悲観）でスケール変更可能**にパラメータ化
-
-**変更済みファイル（未コミット）**:
-- `docs/sample_data/regulatory_events_sample.csv` — 新スキーマ（7列）に更新、浸透率イベント 2 行追加
-- `src/db/schema.py` — `regulatory_events` DDL 更新 + `_migrate_regulatory_events()` 追加
-- `src/pipeline/inventory_loader.py` — `load_regulatory_events()` を新列に対応（旧フォーマット互換処理付き）
-
-**次に実装が必要なもの**:
-1. `src/forecast/scenario.py` — DB から制度イベントを読み込み、漸増ランプ付き `EventAdjustment` リストを生成する関数 + 軸2スケール乗数の適用
-2. `scripts/plot_scenario_comparison.py` — ING03 の adjusted/excluded 比較プロット
-3. テスト（漸増ロジック、軸2スケール、シナリオ分岐）
 
 ---
 
