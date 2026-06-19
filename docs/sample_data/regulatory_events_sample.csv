@@ -1,0 +1,4 @@
+﻿event_date,event_type,impact_scope,impact_value_price_change_rate,memo
+2024-04,通常薬価改定,全製品,-0.055,NHI薬価改定（ダミー想定値）
+2025-04,中間年改定,全製品,-0.03,NHI薬価改定（ダミー想定値）
+2026-04,通常薬価改定,全製品,-0.06,NHI薬価改定（ダミー想定値）

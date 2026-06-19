@@ -1,0 +1,5 @@
+﻿ingredient_id,therapeutic_area_id,name,drug_type
+ING01,TA01,メトホルミン塩酸塩,generic
+ING02,TA02,アトルバスタチン,generic
+ING03,TA03,フィルグラスチム,biosimilar
+ING04,TA04,インフリキシマブ,biosimilar

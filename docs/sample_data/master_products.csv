@@ -1,0 +1,5 @@
+﻿product_id,ingredient_id,product_name,type
+PROD01,ING01,メトグルコGE「サンド」,generic
+PROD02,ING02,アトルバスタチンOD錠「サンド」,generic
+PROD03,ING03,フィルグラスチムBS注「サンド」,biosimilar
+PROD04,ING04,インフリキシマブBS点滴静注用「サンド」,biosimilar
