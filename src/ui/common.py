@@ -2,6 +2,7 @@
 Streamlit アプリ共通ユーティリティ
 DB 接続・データ取得（キャッシュ付き）・サイドバー・Plotly チャートヘルパー
 """
+import os
 import sys
 from pathlib import Path
 
@@ -20,7 +21,21 @@ from src.forecast.scenario import build_penetration_events
 from src.forecast.currency import get_forecast_rate, convert_amounts
 from src.forecast.integrated_forecast import run_integrated_forecast
 
-DB_PATH = str(ROOT / "data" / "pharma_forecast.db")
+
+def _resolve_db_path() -> str:
+    """DB ファイルパスを決定する。
+    優先順: 環境変数 PHARMA_DB_PATH > data/（書き込み可能な場合）> /tmp/
+    Streamlit Cloud はリポジトリが読み取り専用なので /tmp/ にフォールバック。
+    """
+    if "PHARMA_DB_PATH" in os.environ:
+        return os.environ["PHARMA_DB_PATH"]
+    local_dir = ROOT / "data"
+    if local_dir.exists() and os.access(str(local_dir), os.W_OK):
+        return str(local_dir / "pharma_forecast.db")
+    return "/tmp/pharma_forecast.db"
+
+
+DB_PATH = _resolve_db_path()
 HORIZON = 36
 
 INGREDIENTS = {
@@ -34,10 +49,25 @@ AXIS2_LABELS = {"base": "ベース", "optimistic": "楽観 ▲", "pessimistic": 
 PLOTLY_FONT = dict(family="Hiragino Sans, Meiryo, Arial", size=12)
 
 
+# ---------- DB 自動初期化 ----------
+
+@st.cache_resource(show_spinner="データベースを初期化中（初回のみ）...")
+def _ensure_db() -> str:
+    """DB ファイルが存在しない場合、サンプルデータで自動初期化する（セッション内1回）。
+    Streamlit Cloud では毎起動時に /tmp/ へ再初期化される。
+    """
+    if not Path(DB_PATH).exists():
+        _data_dir = str(ROOT / "docs" / "sample_data")
+        from scripts.init_db import run_init
+        run_init(db_path=DB_PATH, data_dir=_data_dir)
+    return DB_PATH
+
+
 # ---------- DB 接続 ----------
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def get_conn():
+    _ensure_db()
     return get_connection(DB_PATH)
 
 

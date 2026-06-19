@@ -12,52 +12,40 @@ from src.pipeline.inventory_loader import (
 )
 from src.pipeline.fx_loader import load_fx_rates
 
-DATA_DIR = "docs/sample_data"
-DB_PATH  = "data/pharma_forecast.db"
+_ROOT    = Path(__file__).parent.parent
+DATA_DIR = str(_ROOT / "docs" / "sample_data")
+DB_PATH  = str(_ROOT / "data" / "pharma_forecast.db")
+
+
+def run_init(db_path: str = DB_PATH, data_dir: str = DATA_DIR) -> None:
+    """DB 初期化 + サンプルデータロード。
+
+    app.py の起動時自動初期化からも呼ばれる。
+    db_path の親ディレクトリが存在しない場合は自動作成する。
+    """
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    conn = get_connection(db_path)
+
+    create_all_tables(conn)
+
+    load_masters(conn, data_dir)
+    load_iqvia(conn, f"{data_dir}/iqvia_market_data.csv")
+    load_sellin(conn, f"{data_dir}/sellin_data.csv")
+    load_sellout(conn, f"{data_dir}/sellout_data.csv")
+    load_inventory(conn, f"{data_dir}/inventory_data.csv")
+
+    conn.execute("DELETE FROM regulatory_events")   # 重複防止: 毎回クリアしてから投入
+    conn.commit()
+    load_regulatory_events(conn, f"{data_dir}/regulatory_events_sample.csv")
+    load_fx_rates(conn, f"{data_dir}/fx_rates_sample.csv")
+
+    conn.close()
 
 
 def main():
     print(f"DB初期化: {DB_PATH}")
-    conn = get_connection(DB_PATH)
-
-    print("テーブル作成...")
-    create_all_tables(conn)
-
-    print("階層マスタをロード中...")
-    counts = load_masters(conn, DATA_DIR)
-    print(f"  疾患領域 (therapeutic_areas): {counts['therapeutic_areas']}")
-    print(f"  成分     (ingredients):       {counts['ingredients']}")
-    print(f"  製品     (products):          {counts['products']}")
-    print(f"  SKU      (skus):              {counts['skus']}")
-
-    print("IQVIAデータをロード中...")
-    n = load_iqvia(conn, f"{DATA_DIR}/iqvia_market_data.csv")
-    print(f"  market_data 行数: {n}")
-
-    print("Sell-inデータをロード中...")
-    n = load_sellin(conn, f"{DATA_DIR}/sellin_data.csv")
-    print(f"  sellin_data 行数: {n}")
-
-    print("Sell-outデータをロード中...")
-    n = load_sellout(conn, f"{DATA_DIR}/sellout_data.csv")
-    print(f"  sellout_data 行数: {n}")
-
-    print("卸別在庫データをロード中...")
-    n = load_inventory(conn, f"{DATA_DIR}/inventory_data.csv")
-    print(f"  inventory_data 行数: {n}")
-
-    print("制度イベントマスタをロード中...")
-    conn.execute("DELETE FROM regulatory_events")   # 重複防止: 毎回クリアしてから投入
-    conn.commit()
-    n = load_regulatory_events(conn, f"{DATA_DIR}/regulatory_events_sample.csv")
-    print(f"  regulatory_events 行数: {n}")
-
-    print("為替レートをロード中...")
-    n = load_fx_rates(conn, f"{DATA_DIR}/fx_rates_sample.csv")
-    print(f"  fx_rates 行数: {n}")
-
-    conn.close()
-    print("\n完了。")
+    run_init(db_path=DB_PATH, data_dir=DATA_DIR)
+    print("完了。")
 
 
 if __name__ == "__main__":
