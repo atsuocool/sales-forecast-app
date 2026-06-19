@@ -1,7 +1,11 @@
 data/*.db
 data/uploads/
+data/real/
 __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
 output/*.png
+*.secret
+.env
+.streamlit/secrets.toml

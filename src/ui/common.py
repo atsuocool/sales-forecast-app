@@ -115,9 +115,31 @@ def get_sku_fc_df(ing_id: str, axis1: str, axis2: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# ---------- ページ間設定共有（セッションステート） ----------
+
+_SHARED = "_shared_settings"
+
+
+def save_shared(**kwargs: object) -> None:
+    """通貨・シナリオ等の設定をセッションステートに保存し、ページ間で共有する。"""
+    st.session_state[_SHARED] = {**st.session_state.get(_SHARED, {}), **kwargs}
+
+
+def shared_default(key: str, default: object) -> object:
+    """ページ間共有設定のデフォルト値を返す。"""
+    return st.session_state.get(_SHARED, {}).get(key, default)
+
+
 # ---------- サイドバー ----------
 
 def sidebar_controls(show_axis1: bool = True, key: str = "main") -> dict:
+    _cur_opts = ["JPY", "USD"]
+    _ax1_opts = ["regulatory_adjusted", "regulatory_excluded"]
+    _ax2_opts = ["base", "optimistic", "pessimistic"]
+
+    def _idx(lst: list, val: object) -> int:
+        return lst.index(val) if val in lst else 0
+
     with st.sidebar:
         st.markdown("## ⚙️ 設定")
 
@@ -125,37 +147,43 @@ def sidebar_controls(show_axis1: bool = True, key: str = "main") -> dict:
             "🔬 成分",
             list(INGREDIENTS.keys()),
             format_func=lambda x: f"{INGREDIENTS[x]}（{x}）",
+            index=_idx(list(INGREDIENTS.keys()), shared_default("ing", "ING01")),
             key=f"{key}_ing",
         )
 
         st.divider()
-        currency = st.radio("💴 通貨", ["JPY", "USD"], horizontal=True, key=f"{key}_cur")
+        currency = st.radio(
+            "💴 通貨", _cur_opts, horizontal=True,
+            index=_idx(_cur_opts, shared_default("cur", "JPY")),
+            key=f"{key}_cur",
+        )
         fx = get_default_fx()
         if currency == "USD":
             fx = st.number_input(
-                "JPY/USD レート", value=float(fx), step=1.0,
-                min_value=50.0, max_value=300.0, key=f"{key}_fx",
+                "JPY/USD レート", value=float(shared_default("fx", fx)),
+                step=1.0, min_value=50.0, max_value=300.0, key=f"{key}_fx",
             )
 
         st.divider()
         if show_axis1:
             axis1 = st.radio(
-                "📋 制度変更",
-                ["regulatory_adjusted", "regulatory_excluded"],
+                "📋 制度変更", _ax1_opts,
                 format_func=lambda x: "加味（Adjusted）" if "adjusted" in x else "非加味（Organic）",
+                index=_idx(_ax1_opts, shared_default("ax1", "regulatory_adjusted")),
                 key=f"{key}_ax1",
             )
         else:
             axis1 = "regulatory_adjusted"
 
         axis2 = st.radio(
-            "📊 シナリオ幅",
-            ["base", "optimistic", "pessimistic"],
+            "📊 シナリオ幅", _ax2_opts,
             format_func=lambda x: AXIS2_LABELS[x],
             horizontal=True,
+            index=_idx(_ax2_opts, shared_default("ax2", "base")),
             key=f"{key}_ax2",
         )
 
+    save_shared(ing=ing_id, cur=currency, fx=fx, ax1=axis1, ax2=axis2)
     return dict(ing_id=ing_id, currency=currency, fx=fx, axis1=axis1, axis2=axis2)
 
 

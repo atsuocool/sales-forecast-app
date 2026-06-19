@@ -60,6 +60,22 @@ def _log_and_record(conn, ing_id, axis1, axis2, currency, fx, kind):
 
 st.divider()
 
+# ── セッションステート: 生成済みファイルを保持（rerun をまたいでダウンロードボタンを安定表示） ──
+# Streamlit 1.39+ で st.download_button の on_click='rerun' がデフォルトになったため、
+# ダウンロードボタンを if st.button(): の内側に置くと rerun 後にトークンが orphan になり
+# ブラウザが UUID をファイル名として使ってしまう。session_state で保持して外に出す。
+for _k in ("xl_file", "ppt_file", "doc_file"):
+    if _k not in st.session_state:
+        st.session_state[_k] = None
+
+# 設定が変わったらキャッシュをクリア
+_cache_key = (ing_id, axis1, axis2, currency, round(fx, 2))
+if st.session_state.get("_exp_cache_key") != _cache_key:
+    st.session_state["_exp_cache_key"] = _cache_key
+    st.session_state["xl_file"]  = None
+    st.session_state["ppt_file"] = None
+    st.session_state["doc_file"] = None
+
 # ── 3列レイアウト ───────────────────────────────────────────────
 col_xl, col_ppt, col_doc = st.columns(3)
 
@@ -76,16 +92,26 @@ with col_xl:
         with st.spinner("Excel 生成中..."):
             try:
                 from src.export.excel_exporter import generate_excel
-                data = generate_excel(get_conn(), ing_id, axis1, axis2, currency, fx)
-                fname = f"forecast_{ing_id}_{axis2}_{currency}_{date.today()}.xlsx"
+                _data = generate_excel(get_conn(), ing_id, axis1, axis2, currency, fx)
+                _fname = f"forecast_{ing_id}_{axis2}_{currency}_{date.today()}.xlsx"
+                assert _fname.endswith(".xlsx"), "拡張子チェック失敗"
                 _log_and_record(get_conn(), ing_id, axis1, axis2, currency, fx, "Excel")
-                st.download_button(
-                    "⬇️ Excel をダウンロード", data=data, file_name=fname,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                )
+                st.session_state["xl_file"] = (_data, _fname)
+                st.rerun()
             except Exception as e:
                 st.error(f"生成エラー: {e}")
+    if st.session_state["xl_file"]:
+        _d, _f = st.session_state["xl_file"]
+        st.download_button(
+            label="⬇️ Excel をダウンロード",
+            data=bytes(_d),
+            file_name=_f,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_xl",
+            on_click="ignore",
+            use_container_width=True,
+        )
+        st.caption(f"📄 {_f}")
 
 # ---------- PowerPoint ----------
 with col_ppt:
@@ -104,16 +130,26 @@ with col_ppt:
         with st.spinner("PowerPoint 生成中（グラフ描画に数秒かかります）..."):
             try:
                 from src.export.pptx_exporter import generate_pptx
-                data = generate_pptx(get_conn(), ing_id, axis2, currency, fx)
-                fname = f"forecast_{ing_id}_{axis2}_{currency}_{date.today()}.pptx"
+                _data = generate_pptx(get_conn(), ing_id, axis2, currency, fx)
+                _fname = f"forecast_{ing_id}_{axis2}_{currency}_{date.today()}.pptx"
+                assert _fname.endswith(".pptx"), "拡張子チェック失敗"
                 _log_and_record(get_conn(), ing_id, axis1, axis2, currency, fx, "PowerPoint")
-                st.download_button(
-                    "⬇️ PowerPoint をダウンロード", data=data, file_name=fname,
-                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                    use_container_width=True,
-                )
+                st.session_state["ppt_file"] = (_data, _fname)
+                st.rerun()
             except Exception as e:
                 st.error(f"生成エラー: {e}")
+    if st.session_state["ppt_file"]:
+        _d, _f = st.session_state["ppt_file"]
+        st.download_button(
+            label="⬇️ PowerPoint をダウンロード",
+            data=bytes(_d),
+            file_name=_f,
+            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            key="dl_ppt",
+            on_click="ignore",
+            use_container_width=True,
+        )
+        st.caption(f"📄 {_f}")
 
 # ---------- Word ----------
 with col_doc:
@@ -136,16 +172,26 @@ with col_doc:
         with st.spinner("Word 生成中..."):
             try:
                 from src.export.word_exporter import generate_word
-                data = generate_word(get_conn(), ing_id, axis1, axis2, detail)
-                fname = f"talk_script_{ing_id}_{axis2}_{date.today()}.docx"
+                _data = generate_word(get_conn(), ing_id, axis1, axis2, detail)
+                _fname = f"talk_script_{ing_id}_{axis2}_{date.today()}.docx"
+                assert _fname.endswith(".docx"), "拡張子チェック失敗"
                 _log_and_record(get_conn(), ing_id, axis1, axis2, currency, fx, "Word")
-                st.download_button(
-                    "⬇️ Word をダウンロード", data=data, file_name=fname,
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True,
-                )
+                st.session_state["doc_file"] = (_data, _fname)
+                st.rerun()
             except Exception as e:
                 st.error(f"生成エラー: {e}")
+    if st.session_state["doc_file"]:
+        _d, _f = st.session_state["doc_file"]
+        st.download_button(
+            label="⬇️ Word をダウンロード",
+            data=bytes(_d),
+            file_name=_f,
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            key="dl_doc",
+            on_click="ignore",
+            use_container_width=True,
+        )
+        st.caption(f"📄 {_f}")
 
 st.divider()
 

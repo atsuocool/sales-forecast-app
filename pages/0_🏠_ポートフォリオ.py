@@ -16,6 +16,7 @@ st.set_page_config(page_title="ポートフォリオ概観", page_icon="🏠", l
 from src.ui.common import (
     db_ok, get_conn, get_default_fx, INGREDIENTS, AXIS2_LABELS,
     load_market_df, get_pen_fit, get_sku_fc_df, convert_amounts, PLOTLY_FONT,
+    save_shared,
 )
 
 _COLORS = {"ING01": "#3B82F6", "ING02": "#EF4444", "ING03": "#10B981", "ING04": "#F59E0B"}
@@ -39,6 +40,9 @@ with st.sidebar:
     st.caption("制度変更: 加味（Adjusted）固定")
     st.divider()
     filter_range = st.checkbox("📅 表示期間を絞り込む", value=False, key="pf_filter")
+
+# ポートフォリオ画面のサイドバー設定を共有ステートに保存（製品詳細ページで引き継ぐ）
+save_shared(cur=currency, fx=fx, ax1=axis1, ax2=axis2)
 
 unit = "万JPY" if currency == "JPY" else "万USD"
 
@@ -125,6 +129,15 @@ st.dataframe(
     df_summary.style.format({c: "{:,.0f}" for c in amount_cols}),
     use_container_width=True, hide_index=True,
 )
+
+# 製品詳細ページへのナビゲーション
+nav_cols = st.columns(4)
+for i, (iid, iname) in enumerate(INGREDIENTS.items()):
+    with nav_cols[i]:
+        if st.button(f"🔍 {iname[:9]}…", key=f"nav_{iid}", use_container_width=True,
+                     help=f"{iname}（{iid}）の詳細分析を開く"):
+            save_shared(ing=iid, cur=currency, fx=fx, ax1=axis1, ax2=axis2)
+            st.switch_page("pages/4_🔍_製品詳細.py")
 
 st.divider()
 
