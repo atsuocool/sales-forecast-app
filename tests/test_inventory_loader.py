@@ -53,7 +53,7 @@ def test_sellin_and_sellout_both_positive(master_conn):
 
 def test_load_regulatory_events(master_conn):
     n = load_regulatory_events(master_conn, f"{DATA_DIR}/regulatory_events_sample.csv")
-    assert n == 3
+    assert n == 5  # 薬価改定3件 + 浸透率イベント2件
 
 
 def test_idempotent(master_conn):

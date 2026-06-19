@@ -76,12 +76,15 @@ CREATE TABLE IF NOT EXISTS inventory_data (
 );
 
 CREATE TABLE IF NOT EXISTS regulatory_events (
-    event_id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_date                TEXT NOT NULL,
-    event_type                TEXT NOT NULL,
-    impact_scope              TEXT NOT NULL,
-    impact_value_price_change_rate REAL,
-    memo                      TEXT
+    event_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_date        TEXT NOT NULL,
+    event_type        TEXT NOT NULL,
+    impact_scope      TEXT NOT NULL,
+    impact_target     TEXT NOT NULL DEFAULT 'price',
+    impact_parameter  TEXT,
+    impact_value      REAL,
+    effect_lag_months INTEGER NOT NULL DEFAULT 0,
+    memo              TEXT
 );
 
 CREATE TABLE IF NOT EXISTS fx_rates (
@@ -96,6 +99,22 @@ CREATE TABLE IF NOT EXISTS fx_rates (
 """
 
 
+def _migrate_regulatory_events(conn: sqlite3.Connection) -> None:
+    """既存 DB の regulatory_events テーブルに新列を追加する（冪等）。"""
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(regulatory_events)")}
+    migrations = [
+        ("impact_target",     "TEXT NOT NULL DEFAULT 'price'"),
+        ("impact_parameter",  "TEXT"),
+        ("impact_value",      "REAL"),
+        ("effect_lag_months", "INTEGER NOT NULL DEFAULT 0"),
+    ]
+    for col, definition in migrations:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE regulatory_events ADD COLUMN {col} {definition}")
+    conn.commit()
+
+
 def create_all_tables(conn: sqlite3.Connection) -> None:
     conn.executescript(DDL)
+    _migrate_regulatory_events(conn)
     conn.commit()

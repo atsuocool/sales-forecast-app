@@ -1,4 +1,6 @@
-﻿event_date,event_type,impact_scope,impact_value_price_change_rate,memo
-2024-04,通常薬価改定,全製品,-0.055,NHI薬価改定（ダミー想定値）
-2025-04,中間年改定,全製品,-0.03,NHI薬価改定（ダミー想定値）
-2026-04,通常薬価改定,全製品,-0.06,NHI薬価改定（ダミー想定値）
+event_date,event_type,impact_scope,impact_target,impact_parameter,impact_value,effect_lag_months,memo
+2024-04,通常薬価改定,全製品,price,price_change_rate,-0.055,0,NHI薬価改定（ダミー想定値）
+2025-04,中間年改定,全製品,price,price_change_rate,-0.030,0,NHI薬価改定（ダミー想定値）
+2026-04,通常薬価改定,全製品,price,price_change_rate,-0.060,0,NHI薬価改定（ダミー想定値）
+2026-06,バイオ後続品使用促進策強化,後発品対象,penetration,pen_L_delta,0.05,3,浸透率上限+5pp（3ヶ月で漸増）
+2026-06,バイオ後続品使用促進策強化,後発品対象,penetration,pen_k_delta,0.02,3,立ち上がり速度+0.02（3ヶ月で漸増）
