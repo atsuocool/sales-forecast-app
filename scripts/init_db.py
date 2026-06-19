@@ -1,7 +1,10 @@
+import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# __file__ を resolve() して絶対パスを確定（Streamlit Cloud での symlink 対策）
+_BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_BASE_DIR))
 
 from src.db.connection import get_connection
 from src.db.schema import create_all_tables
@@ -12,9 +15,9 @@ from src.pipeline.inventory_loader import (
 )
 from src.pipeline.fx_loader import load_fx_rates
 
-_ROOT    = Path(__file__).parent.parent
-DATA_DIR = str(_ROOT / "docs" / "sample_data")
-DB_PATH  = str(_ROOT / "data" / "pharma_forecast.db")
+# CSVのパスを __file__ 基準の絶対パスで解決
+DATA_DIR = str(_BASE_DIR / "docs" / "sample_data")
+DB_PATH  = os.environ.get("DB_PATH", "/tmp/pharma_forecast.db")
 
 
 def run_init(db_path: str = DB_PATH, data_dir: str = DATA_DIR) -> None:

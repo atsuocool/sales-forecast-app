@@ -1,9 +1,12 @@
 """
 GE/BS 販売予測アプリ — ダッシュボード（メインページ）
 """
+import os
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
+
+_APP_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_APP_DIR))
 
 import streamlit as st
 
@@ -14,6 +17,27 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── DB 自動初期化（app.py 先頭で明示実行） ─────────────────────────
+# Streamlit Cloud ではリポジトリが読み取り専用のため DB を /tmp/ に作成する。
+# 環境変数 DB_PATH を設定すればパスを切り替えられる（ローカル永続化用途等）。
+
+@st.cache_resource(show_spinner="データベースを初期化中（初回のみ、サンプルデータをロード）...")
+def _init_db_on_startup() -> str:
+    db_path  = os.environ.get("DB_PATH", "/tmp/pharma_forecast.db")
+    data_dir = str(_APP_DIR / "docs" / "sample_data")
+    if not Path(db_path).exists():
+        from scripts.init_db import run_init
+        run_init(db_path=db_path, data_dir=data_dir)
+    return db_path
+
+try:
+    _init_db_on_startup()
+except Exception as _e:
+    st.error(f"データベースの初期化に失敗しました: {_e}")
+    st.caption("ローカル環境では `python3 scripts/init_db.py` を実行してください。")
+    st.stop()
+
+# ── 以降の imports ──────────────────────────────────────────────────
 from src.ui.common import (
     db_ok, sidebar_controls,
     load_market_df, get_market_fc, get_pen_fit,
@@ -23,9 +47,9 @@ from src.ui.common import (
 )
 import numpy as np
 
-# ---------- ガード ----------
+# 安全ネット: 初期化成功後も接続確認（失敗時は詳細エラーを表示）
 if not db_ok():
-    st.error("データベースが見つかりません。ターミナルで `python3 scripts/init_db.py` を実行してください。")
+    st.error("データベースへの接続に失敗しました。アプリを再起動するか管理者に連絡してください。")
     st.stop()
 
 # ---------- サイドバー ----------
