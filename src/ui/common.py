@@ -42,12 +42,16 @@ PLOTLY_FONT = dict(family="Hiragino Sans, Meiryo, Arial", size=12)
 
 @st.cache_resource(show_spinner="データベースを初期化中（初回のみ）...")
 def _ensure_db() -> str:
-    """DB ファイルが存在しない場合、サンプルデータで自動初期化する（セッション内1回）。
+    """テーブルが存在しない場合（空DBを含む）、サンプルデータで自動初期化する。
     例外は握り潰さず呼び出し元へ伝播させる。
     """
-    if not Path(DB_PATH).exists():
+    import os as _os
+    from src.db.connection import is_db_initialized
+    if not is_db_initialized(DB_PATH):
+        if _os.path.exists(DB_PATH):
+            _os.remove(DB_PATH)  # 空のDBファイルを削除してから再作成
         data_dir = str(ROOT / "docs" / "sample_data")
-        from scripts.init_db import run_init  # scripts/__init__.py で正規パッケージ化済み
+        from scripts.init_db import run_init
         run_init(db_path=DB_PATH, data_dir=data_dir)
     return DB_PATH
 

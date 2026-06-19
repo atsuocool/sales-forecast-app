@@ -31,9 +31,13 @@ st.sidebar.caption(f"APP_DIR: {_APP_DIR}")
 # ── DB 自動初期化（app.py 先頭で明示実行） ─────────────────────────
 @st.cache_resource(show_spinner="データベースを初期化中（初回のみ、サンプルデータをロード）...")
 def _init_db_on_startup() -> str:
+    from src.db.connection import is_db_initialized
     db_path  = os.environ.get("DB_PATH", "/tmp/pharma_forecast.db")
     data_dir = str(_APP_DIR / "docs" / "sample_data")
-    if not Path(db_path).exists():
+    if not is_db_initialized(db_path):
+        # ファイルが存在しても空なら削除してから再初期化
+        if os.path.exists(db_path):
+            os.remove(db_path)
         from scripts.init_db import run_init
         run_init(db_path=db_path, data_dir=data_dir)
     return db_path
