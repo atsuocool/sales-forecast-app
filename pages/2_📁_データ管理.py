@@ -94,6 +94,87 @@ for label, loader_fn, hint in upload_configs:
 
 st.divider()
 
+# ---------- 月次運用フロー ----------
+st.subheader("📅 月次運用チェックリスト")
+st.caption("毎月のデータ更新・予測確認の標準フロー")
+
+with st.expander("📋 月次運用ステップ（クリックで展開）", expanded=True):
+    step_status = []
+
+    # 各テーブルのデータ鮮度確認
+    freshness = {}
+    for tbl, date_col in [("market_data","period"),("sellin_data","period"),
+                           ("sellout_data","period"),("inventory_data","period"),
+                           ("regulatory_events","event_date"),("fx_rates","period")]:
+        try:
+            row = conn.execute(f"SELECT MAX({date_col}) FROM {tbl}").fetchone()
+            freshness[tbl] = row[0] or "データなし"
+        except Exception:
+            freshness[tbl] = "エラー"
+
+    import datetime
+    current_ym = datetime.date.today().strftime("%Y-%m")
+
+    checklist = [
+        ("IQVIA 市場データの更新",
+         freshness.get("market_data","?"),
+         "毎月末にエクスポートされた最新月のデータをアップロードしてください。"),
+        ("Sell-in データの更新",
+         freshness.get("sellin_data","?"),
+         "社内システムから SKU×卸 月次 Sell-in データを取得してアップロードします。"),
+        ("Sell-out データの更新",
+         freshness.get("sellout_data","?"),
+         "社内システムから SKU×施設区分 月次 Sell-out データを取得してアップロードします。"),
+        ("卸別在庫データの更新",
+         freshness.get("inventory_data","?"),
+         "月末在庫データを更新し、在庫日数（DOI）の異常値を確認します。"),
+        ("為替レートの確認",
+         freshness.get("fx_rates","?"),
+         "USD 表示を使用する場合、forecast_assumption レートを最新値に更新してください。"),
+        ("制度イベントの確認",
+         freshness.get("regulatory_events","?"),
+         "新たな薬価改定・使用促進策が発表された場合、イベントマスタを更新します。"),
+    ]
+
+    for i, (task, last_period, note) in enumerate(checklist, 1):
+        ok = last_period >= current_ym[:7] if last_period not in ("データなし","エラー","?") else False
+        icon = "✅" if ok else "⬜"
+        cols = st.columns([0.08, 0.35, 0.18, 0.39])
+        cols[0].markdown(f"**{icon}**")
+        cols[1].markdown(f"**{i}. {task}**")
+        cols[2].markdown(f"`最終: {last_period}`")
+        cols[3].caption(note)
+
+    st.markdown("---")
+    st.markdown(
+        "**更新後の手順:**  \n"
+        "① 上の「ファイルアップロード」から新データを投入  \n"
+        "② 「キャッシュをクリア」ボタンで予測キャッシュを更新  \n"
+        "③ ポートフォリオ概観・ダッシュボードで数値を確認  \n"
+        "④ 📤 エクスポートページで月次レポートを生成・配布"
+    )
+
+# ---------- 予測ログ ----------
+st.divider()
+st.subheader("📜 予測ログ（エクスポート履歴）")
+try:
+    log_rows = conn.execute(
+        "SELECT log_id, logged_at, ing_id, axis1, axis2, currency, "
+        "ROUND(fc_y1_jpy/10000,0) y1, ROUND(fc_y2_jpy/10000,0) y2, ROUND(fc_y3_jpy/10000,0) y3, triggered_by "
+        "FROM forecast_log ORDER BY log_id DESC LIMIT 20"
+    ).fetchall()
+    if log_rows:
+        import pandas as pd
+        df_log = pd.DataFrame(log_rows, columns=["ID","日時","成分","軸1","軸2","通貨",
+                                                   "Y1(万JPY)","Y2(万JPY)","Y3(万JPY)","出力種別"])
+        st.dataframe(df_log, use_container_width=True, hide_index=True)
+    else:
+        st.info("エクスポートを実行すると、ここに予測ログが記録されます。")
+except Exception:
+    st.info("forecast_log テーブルが未作成です。`python3 scripts/init_db.py` を再実行してください。")
+
+st.divider()
+
 # ---------- DB 初期化（フルリセット） ----------
 st.subheader("⚠️ DB 初期化（サンプルデータで再構築）")
 st.warning(

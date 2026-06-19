@@ -47,6 +47,8 @@ def main():
     print(f"  inventory_data 行数: {n}")
 
     print("制度イベントマスタをロード中...")
+    conn.execute("DELETE FROM regulatory_events")   # 重複防止: 毎回クリアしてから投入
+    conn.commit()
     n = load_regulatory_events(conn, f"{DATA_DIR}/regulatory_events_sample.csv")
     print(f"  regulatory_events 行数: {n}")
 

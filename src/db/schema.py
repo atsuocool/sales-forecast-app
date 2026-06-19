@@ -96,6 +96,19 @@ CREATE TABLE IF NOT EXISTS fx_rates (
     updated_at  TEXT,
     UNIQUE(rate_type, period)
 );
+
+CREATE TABLE IF NOT EXISTS forecast_log (
+    log_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    logged_at    TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    ing_id       TEXT,
+    axis1        TEXT,
+    axis2        TEXT,
+    currency     TEXT,
+    fc_y1_jpy    REAL,
+    fc_y2_jpy    REAL,
+    fc_y3_jpy    REAL,
+    triggered_by TEXT
+);
 """
 
 
@@ -117,4 +130,23 @@ def _migrate_regulatory_events(conn: sqlite3.Connection) -> None:
 def create_all_tables(conn: sqlite3.Connection) -> None:
     conn.executescript(DDL)
     _migrate_regulatory_events(conn)
+    conn.commit()
+
+
+def log_forecast(
+    conn: sqlite3.Connection,
+    ing_id: str,
+    axis1: str,
+    axis2: str,
+    currency: str,
+    fc_y1: float,
+    fc_y2: float,
+    fc_y3: float,
+    triggered_by: str = "manual",
+) -> None:
+    conn.execute(
+        "INSERT INTO forecast_log (ing_id, axis1, axis2, currency, fc_y1_jpy, fc_y2_jpy, fc_y3_jpy, triggered_by) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (ing_id, axis1, axis2, currency, fc_y1, fc_y2, fc_y3, triggered_by),
+    )
     conn.commit()

@@ -12,8 +12,10 @@ import streamlit as st
 st.set_page_config(page_title="エクスポート", page_icon="📤", layout="wide")
 
 from src.ui.common import (
-    db_ok, get_conn, get_default_fx, INGREDIENTS, AXIS2_LABELS, sidebar_controls
+    db_ok, get_conn, get_default_fx, get_sku_fc_df, convert_amounts,
+    INGREDIENTS, AXIS2_LABELS, sidebar_controls,
 )
+from src.db.schema import log_forecast
 
 if not db_ok():
     st.error("DB が見つかりません。`python3 scripts/init_db.py` を実行してください。")
@@ -39,6 +41,23 @@ st.info(
     icon="ℹ️",
 )
 
+def _log_and_record(conn, ing_id, axis1, axis2, currency, fx, kind):
+    """エクスポート時に予測ログを記録する。"""
+    try:
+        import numpy as np
+        df_fc = get_sku_fc_df(ing_id, axis1, axis2).copy()
+        df_fc["year"]   = df_fc["period"].str[:4]
+        df_fc["amount"] = convert_amounts(df_fc["amount_jpy"].values, currency, fx)
+        yr = df_fc.groupby("year")["amount"].sum()
+        years = sorted(yr.index)
+        log_forecast(conn, ing_id, axis1, axis2, currency,
+                     float(yr.get(years[0], 0)) if years else 0,
+                     float(yr.get(years[1], 0)) if len(years) > 1 else 0,
+                     float(yr.get(years[2], 0)) if len(years) > 2 else 0,
+                     kind)
+    except Exception:
+        pass  # ログ失敗はサイレントに無視
+
 st.divider()
 
 # ── 3列レイアウト ───────────────────────────────────────────────
@@ -59,6 +78,7 @@ with col_xl:
                 from src.export.excel_exporter import generate_excel
                 data = generate_excel(get_conn(), ing_id, axis1, axis2, currency, fx)
                 fname = f"forecast_{ing_id}_{axis2}_{currency}_{date.today()}.xlsx"
+                _log_and_record(get_conn(), ing_id, axis1, axis2, currency, fx, "Excel")
                 st.download_button(
                     "⬇️ Excel をダウンロード", data=data, file_name=fname,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -86,6 +106,7 @@ with col_ppt:
                 from src.export.pptx_exporter import generate_pptx
                 data = generate_pptx(get_conn(), ing_id, axis2, currency, fx)
                 fname = f"forecast_{ing_id}_{axis2}_{currency}_{date.today()}.pptx"
+                _log_and_record(get_conn(), ing_id, axis1, axis2, currency, fx, "PowerPoint")
                 st.download_button(
                     "⬇️ PowerPoint をダウンロード", data=data, file_name=fname,
                     mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -117,6 +138,7 @@ with col_doc:
                 from src.export.word_exporter import generate_word
                 data = generate_word(get_conn(), ing_id, axis1, axis2, detail)
                 fname = f"talk_script_{ing_id}_{axis2}_{date.today()}.docx"
+                _log_and_record(get_conn(), ing_id, axis1, axis2, currency, fx, "Word")
                 st.download_button(
                     "⬇️ Word をダウンロード", data=data, file_name=fname,
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
