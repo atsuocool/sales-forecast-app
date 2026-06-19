@@ -27,9 +27,8 @@ from src.ui.common import (
 )
 
 if not db_ok():
-    traceback.print_exc()
     st.error("DB が見つかりません。")
-    st.code(traceback.format_exc())
+    st.code(st.session_state.get("_db_last_error", "詳細不明（traceback なし）"))
     st.stop()
 
 # ── サイドバー（通貨・制度変更・シナリオ幅のみ; 成分は本体で選択） ──────

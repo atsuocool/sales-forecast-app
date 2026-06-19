@@ -19,9 +19,8 @@ from src.ui.common import (
 from src.db.schema import log_forecast
 
 if not db_ok():
-    traceback.print_exc()
     st.error("DB が見つかりません。")
-    st.code(traceback.format_exc())
+    st.code(st.session_state.get("_db_last_error", "詳細不明（traceback なし）"))
     st.stop()
 
 st.title("📤 エクスポート")

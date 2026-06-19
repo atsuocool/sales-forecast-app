@@ -26,9 +26,8 @@ st.title("📁 データ管理")
 st.subheader("🗄️ データベース状態")
 
 if not db_ok():
-    traceback.print_exc()
     st.error("DB が見つかりません。")
-    st.code(traceback.format_exc())
+    st.code(st.session_state.get("_db_last_error", "詳細不明（traceback なし）"))
     st.stop()
 
 conn = get_conn()

@@ -20,7 +20,8 @@ from src.ui.common import (
 )
 
 if not db_ok():
-    st.error("DB が見つかりません。`python3 scripts/init_db.py` を実行してください。")
+    st.error("DB が見つかりません。")
+    st.code(st.session_state.get("_db_last_error", "詳細不明（traceback なし）"))
     st.stop()
 
 # ---------- サイドバー（軸1 は比較対象なので非表示） ----------

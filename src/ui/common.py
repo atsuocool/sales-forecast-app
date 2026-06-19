@@ -61,10 +61,18 @@ def get_conn():
 
 
 def db_ok() -> bool:
+    import traceback as _tb
     try:
-        get_conn().execute("SELECT 1 FROM market_data LIMIT 1")
+        conn = get_conn()
+        if conn is None:
+            raise RuntimeError("get_conn() returned None — @st.cache_resource may have cached a failed result")
+        conn.execute("SELECT 1 FROM market_data LIMIT 1")
+        st.session_state.pop("_db_last_error", None)
         return True
     except Exception:
+        err = _tb.format_exc()
+        _tb.print_exc()  # Streamlit Cloud ログへ出力
+        st.session_state["_db_last_error"] = err
         return False
 
 

@@ -23,9 +23,8 @@ from src.ui.common import (
 _COLORS = {"ING01": "#3B82F6", "ING02": "#EF4444", "ING03": "#10B981", "ING04": "#F59E0B"}
 
 if not db_ok():
-    traceback.print_exc()
     st.error("DB が見つかりません。")
-    st.code(traceback.format_exc())
+    st.code(st.session_state.get("_db_last_error", "詳細不明（traceback なし）"))
     st.stop()
 
 # ── サイドバー ──────────────────────────────────────────────────
