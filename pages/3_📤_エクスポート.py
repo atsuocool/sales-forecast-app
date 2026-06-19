@@ -3,6 +3,7 @@
 Excel / PowerPoint / Word トーク原稿の生成・ダウンロード
 """
 import sys
+import traceback
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -18,7 +19,9 @@ from src.ui.common import (
 from src.db.schema import log_forecast
 
 if not db_ok():
-    st.error("DB が見つかりません。`python3 scripts/init_db.py` を実行してください。")
+    traceback.print_exc()
+    st.error("DB が見つかりません。")
+    st.code(traceback.format_exc())
     st.stop()
 
 st.title("📤 エクスポート")

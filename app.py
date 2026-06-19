@@ -3,6 +3,8 @@ GE/BS 販売予測アプリ — ダッシュボード（メインページ）
 """
 import os
 import sys
+import sqlite3
+import traceback
 from pathlib import Path
 
 _APP_DIR = Path(__file__).resolve().parent
@@ -17,10 +19,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── DB 自動初期化（app.py 先頭で明示実行） ─────────────────────────
-# Streamlit Cloud ではリポジトリが読み取り専用のため DB を /tmp/ に作成する。
-# 環境変数 DB_PATH を設定すればパスを切り替えられる（ローカル永続化用途等）。
+# ── デバッグ情報（サイドバー）──────────────────────────────────────
+_db_path_debug = os.environ.get("DB_PATH", "/tmp/pharma_forecast.db")
+st.sidebar.caption(f"Python: {sys.version}")
+st.sidebar.caption(f"sqlite3: {sqlite3.sqlite_version}")
+st.sidebar.caption(f"/tmp writable: {os.access('/tmp', os.W_OK)}")
+st.sidebar.caption(f"DB path: {_db_path_debug}")
+st.sidebar.caption(f"DB exists: {os.path.exists(_db_path_debug)}")
+st.sidebar.caption(f"APP_DIR: {_APP_DIR}")
 
+# ── DB 自動初期化（app.py 先頭で明示実行） ─────────────────────────
 @st.cache_resource(show_spinner="データベースを初期化中（初回のみ、サンプルデータをロード）...")
 def _init_db_on_startup() -> str:
     db_path  = os.environ.get("DB_PATH", "/tmp/pharma_forecast.db")
@@ -33,8 +41,9 @@ def _init_db_on_startup() -> str:
 try:
     _init_db_on_startup()
 except Exception as _e:
-    st.error(f"データベースの初期化に失敗しました: {_e}")
-    st.caption("ローカル環境では `python3 scripts/init_db.py` を実行してください。")
+    traceback.print_exc()  # Streamlit Cloud ログへ出力
+    st.error(f"DB初期化エラー: {_e}")
+    st.code(traceback.format_exc())  # 画面にも全スタックトレースを表示
     st.stop()
 
 # ── 以降の imports ──────────────────────────────────────────────────
@@ -47,9 +56,10 @@ from src.ui.common import (
 )
 import numpy as np
 
-# 安全ネット: 初期化成功後も接続確認（失敗時は詳細エラーを表示）
 if not db_ok():
-    st.error("データベースへの接続に失敗しました。アプリを再起動するか管理者に連絡してください。")
+    traceback.print_exc()
+    st.error("データベースへの接続に失敗しました。")
+    st.code(traceback.format_exc())
     st.stop()
 
 # ---------- サイドバー ----------

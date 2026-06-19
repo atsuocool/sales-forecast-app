@@ -3,6 +3,7 @@
 全成分の 36ヶ月予測を一覧で比較。月次運用時のファーストビュー。
 """
 import sys
+import traceback
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -22,7 +23,9 @@ from src.ui.common import (
 _COLORS = {"ING01": "#3B82F6", "ING02": "#EF4444", "ING03": "#10B981", "ING04": "#F59E0B"}
 
 if not db_ok():
-    st.error("DB が見つかりません。`python3 scripts/init_db.py` を実行してください。")
+    traceback.print_exc()
+    st.error("DB が見つかりません。")
+    st.code(traceback.format_exc())
     st.stop()
 
 # ── サイドバー ──────────────────────────────────────────────────

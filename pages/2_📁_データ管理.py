@@ -3,6 +3,7 @@
 DB 状態確認 + CSV ファイルアップロード + キャッシュクリア
 """
 import sys
+import traceback
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -25,7 +26,9 @@ st.title("📁 データ管理")
 st.subheader("🗄️ データベース状態")
 
 if not db_ok():
-    st.error("DB が見つかりません。ターミナルで `python3 scripts/init_db.py` を実行してください。")
+    traceback.print_exc()
+    st.error("DB が見つかりません。")
+    st.code(traceback.format_exc())
     st.stop()
 
 conn = get_conn()
