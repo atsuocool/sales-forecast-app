@@ -3,7 +3,6 @@ GE/BS 販売予測アプリ — ダッシュボード（メインページ）
 """
 import os
 import sys
-import sqlite3
 import traceback
 from pathlib import Path
 
@@ -19,14 +18,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── デバッグ情報（サイドバー）──────────────────────────────────────
-_db_path_debug = os.environ.get("DB_PATH", "/tmp/pharma_forecast.db")
-st.sidebar.caption(f"Python: {sys.version}")
-st.sidebar.caption(f"sqlite3: {sqlite3.sqlite_version}")
-st.sidebar.caption(f"/tmp writable: {os.access('/tmp', os.W_OK)}")
-st.sidebar.caption(f"DB path: {_db_path_debug}")
-st.sidebar.caption(f"DB exists: {os.path.exists(_db_path_debug)}")
-st.sidebar.caption(f"APP_DIR: {_APP_DIR}")
 
 # ── DB 自動初期化（app.py 先頭で明示実行） ─────────────────────────
 @st.cache_resource(show_spinner="データベースを初期化中（初回のみ、サンプルデータをロード）...")
