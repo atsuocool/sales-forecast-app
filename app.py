@@ -18,6 +18,17 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── パスワード認証 ──────────────────────────────────────────────────
+if not st.session_state.get("authenticated"):
+    st.title("💊 GE/BS 販売予測")
+    pw = st.text_input("パスワード", type="password", key="_login_pw")
+    if st.button("ログイン"):
+        if pw == st.secrets["password"]:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("パスワードが正しくありません。")
+    st.stop()
 
 # ── DB 自動初期化（app.py 先頭で明示実行） ─────────────────────────
 @st.cache_resource(show_spinner="データベースを初期化中（初回のみ、サンプルデータをロード）...")
